@@ -1,15 +1,14 @@
 import React, { useState } from "react";
 import {
-  Search,
+ 
   Plus,
   Phone,
   MapPin,
-  MessageCircle,
   AlertTriangle
 } from "lucide-react";
 import "./Community.css";
 
-const CommunityBoard = () => {
+function CommunityBoard() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -30,10 +29,9 @@ const CommunityBoard = () => {
       type: "Blood Needed",
       urgent: true,
       title: "Urgent: O+ Blood Needed",
-      description:
-        "My father needs O+ blood urgently for surgery at City Hospital.",
+      description: "O+ blood required at City Hospital immediately.",
       location: "City Hospital",
-      phone: "+92 300 1234567",
+      phone: "923336343230", // digits only
       author: "Community Member",
       responses: 3,
       timeAgo: "32m ago"
@@ -43,111 +41,104 @@ const CommunityBoard = () => {
       type: "Missing Person",
       urgent: true,
       title: "Missing Child – 8 Years Old",
-      description:
-        "Last seen near Central Park wearing blue t-shirt and jeans.",
+      description: "Last seen near Central Park.",
       location: "Central Park",
-      phone: "+92 300 9876543",
+      phone: "923009876543",
       author: "Local Police",
       responses: 12,
       timeAgo: "7h ago"
     }
   ];
 
+  // Open WhatsApp chat immediately
+  const openWhatsApp = (phone) => {
+    if (!phone) return;
+    const cleanNumber = phone.replace(/\D/g, "");
+    const url = `https://wa.me/${cleanNumber}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="community-container">
       <main className="main-content">
+
         {/* Header */}
         <div className="page-header">
           <div>
             <h1>Community Help Board</h1>
-            <p className="subtitle">
-              Connect with people and get help in emergencies
-            </p>
+            <p className="subtitle">Connect with people in emergencies</p>
           </div>
 
           <button
             className="create-post-btn"
             onClick={() => setShowCreateModal(true)}
           >
-            <Plus size={18} />
-            Create Post
+            <Plus size={18} /> Create Post
           </button>
         </div>
 
-        {/* Search + Filters */}
-        <div className="search-filter-section">
-          <div className="search-box">
-            <Search size={18} />
-            <input placeholder="Search requests..." />
-          </div>
-
-          <div className="filters">
-            {filters.map((f) => (
-              <button
-                key={f.id}
-                className={`filter-btn ${
-                  activeFilter === f.id ? "active" : ""
-                }`}
-                onClick={() => setActiveFilter(f.id)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+        {/* Filters */}
+        <div className="filters">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              className={`filter-btn ${activeFilter === f.id ? "active" : ""}`}
+              onClick={() => setActiveFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
         {/* Posts */}
         <div className="posts-list">
-          {posts.map((post) => (
-            <div key={post.id} className="post-card">
-              <div className="post-header">
-                <span className="tag">{post.type}</span>
-                {post.urgent && <span className="tag urgent">Urgent</span>}
-                <span className="time">{post.timeAgo}</span>
-              </div>
+          {posts
+            .filter(post => activeFilter === "All" || post.type.includes(activeFilter))
+            .map((post) => (
+              <div key={post.id} className="post-card">
+                <div className="post-header">
+                  <span className="tag">{post.type}</span>
+                  {post.urgent && <span className="tag urgent">Urgent</span>}
+                  <span className="time">{post.timeAgo}</span>
+                </div>
 
-              <h3>{post.title}</h3>
-              <p>{post.description}</p>
+                <h3>{post.title}</h3>
+                <p>{post.description}</p>
 
-              <div className="post-info">
-                <span>
-                  <MapPin size={14} /> {post.location}
-                </span>
-                {post.phone && (
+                <div className="post-info">
                   <span>
-                    <Phone size={14} /> {post.phone}
+                    <MapPin size={14} /> {post.location}
                   </span>
-                )}
-              </div>
+                  {post.phone && (
+                    <span>
+                      <Phone size={14} /> {post.phone}
+                    </span>
+                  )}
+                </div>
 
-              <div className="post-footer">
-                <span>{post.author}</span>
-                <div className="actions">
-                  <MessageCircle size={16} />
-                  {post.responses} responses
-                  <button className="respond-btn">Respond</button>
+                <div className="post-footer">
+                  <span>{post.author}</span>
+                  <button
+                    className="respond-btn"
+                    onClick={() => openWhatsApp(post.phone)}
+                  >
+                    Respond on WhatsApp
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </main>
 
       {/* Floating Emergency Button */}
       <button className="fab">
-        <AlertTriangle  />
+        <AlertTriangle />
       </button>
 
-      {/* ================= CREATE POST MODAL ================= */}
+      {/* Create Post Modal */}
       {showCreateModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            className="create-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="create-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create Help Request</h2>
               <button
@@ -182,10 +173,9 @@ const CommunityBoard = () => {
               <input placeholder="+92..." />
 
               <label className="urgent-check">
-  <input type="checkbox" />
-  <span>Mark as Urgent</span>
-</label>
-
+                <input type="checkbox" />
+                <span>Mark as Urgent</span>
+              </label>
 
               <button className="submit-btn" type="button">
                 Post Request
@@ -196,6 +186,6 @@ const CommunityBoard = () => {
       )}
     </div>
   );
-};
+}
 
 export default CommunityBoard;
