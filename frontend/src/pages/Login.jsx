@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -105,10 +106,10 @@ const Login = () => {
         setFormData({ username: "", password: "" });
         setErrors({});
         
-        // Clear success message after 5 seconds
+        // Navigate to dashboard after successful login
         setTimeout(() => {
-          setSuccessMessage("");
-        }, 5000);
+          navigate("/dashboard");
+        }, 1500);
       } else {
         // Handle validation errors from server
         if (data.errors && Array.isArray(data.errors)) {

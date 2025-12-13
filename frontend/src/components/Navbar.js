@@ -7,8 +7,7 @@ import {
   Shield,
   Map,
   MessageCircle,
- 
-  Settings   // 👈 ADD THIS
+  Settings
 } from "lucide-react";
 import "./Navbar.css";
 

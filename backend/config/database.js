@@ -1,0 +1,46 @@
+//MongoDB Atlas Database Configuration
+ 
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGO_URI;
+
+    if (!mongoURI) {
+      console.error('MONGO_URI is not defined in .env file');
+      console.log('Please add MONGO_URI to your .env file');
+      process.exit(1);
+    }
+
+    const conn = await mongoose.connect(mongoURI);
+
+    console.log(`MongoDB Atlas Connected: ${conn.connection.host}`);
+    console.log(`Database: ${conn.connection.name}`);
+
+    // Handle connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+    });
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed through app termination');
+      process.exit(0);
+    });
+
+  } catch (error) {
+    console.error('MongoDB connection error:', error.message);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+

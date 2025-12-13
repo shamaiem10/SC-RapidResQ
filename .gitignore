@@ -22,8 +22,6 @@ Thumbs.db
 dist/
 build/
 
-# Backend data storage
-backend/data/
-
 QUICK_START.md
 TEST_CASES.md
+MONGODB_SETUP.md

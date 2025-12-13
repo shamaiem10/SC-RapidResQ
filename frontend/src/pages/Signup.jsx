@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Signup.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
 const Signup = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -40,8 +41,8 @@ const Signup = () => {
 
   // Phone validation
   const validatePhone = (phone) => {
-    const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
-    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+    const cleaned = phone.replace(/[\s-()]/g, '');
     return phoneRegex.test(phone) && cleaned.length >= 10 && cleaned.length <= 15;
   };
 
@@ -198,7 +199,7 @@ const Signup = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
+      const response = await fetch(`${API_BASE_URL}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -237,10 +238,10 @@ const Signup = () => {
         setSkills([]);
         setErrors({});
         
-        // Clear success message after 5 seconds
+        // Navigate to dashboard after successful signup
         setTimeout(() => {
-          setSuccessMessage("");
-        }, 5000);
+          navigate("/dashboard");
+        }, 1500);
       } else {
         // Handle validation errors from server
         if (data.errors && Array.isArray(data.errors)) {
