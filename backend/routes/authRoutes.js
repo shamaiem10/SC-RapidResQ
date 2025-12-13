@@ -4,7 +4,7 @@
  */
 const express = require('express');
 const router = express.Router();
-const { loginUser, signupUser } = require('../controllers/authController');
+const { loginUser, signupUser, getUserProfile, updateUserProfile } = require('../controllers/authController');
 
 /**
  * @route   POST /api/login
@@ -19,6 +19,20 @@ router.post('/login', loginUser);
  * @access  Public
  */
 router.post('/signup', signupUser);
+
+/**
+ * @route   GET /api/profile/:username
+ * @desc    Get user profile by username
+ * @access  Public
+ */
+router.get('/profile/:username', getUserProfile);
+
+/**
+ * @route   PUT /api/profile/:username
+ * @desc    Update user profile by username
+ * @access  Public
+ */
+router.put('/profile/:username', updateUserProfile);
 
 module.exports = router;
 

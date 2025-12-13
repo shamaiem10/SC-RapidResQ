@@ -216,8 +216,104 @@ const signupUser = async (req, res) => {
   }
 };
 
+/**
+ * Get user profile by username
+ */
+const getUserProfile = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Find user by username (exclude sensitive information)
+    const user = await User.findOne(
+      { username: username.toLowerCase() },
+      { password: 0 } // Exclude password from response
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User profile retrieved successfully',
+      data: user
+    });
+
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Update user profile by username
+ */
+const updateUserProfile = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const updateData = req.body;
+
+    // Remove fields that shouldn't be updated via this endpoint
+    delete updateData.password;
+    delete updateData.username;
+    delete updateData._id;
+
+    // Find and update user
+    const updatedUser = await User.findOneAndUpdate(
+      { username: username.toLowerCase() },
+      updateData,
+      { 
+        new: true, // Return updated document
+        runValidators: true, // Run mongoose validations
+        select: { password: 0 } // Exclude password from response
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Update user profile error:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   loginUser,
-  signupUser
+  signupUser,
+  getUserProfile,
+  updateUserProfile
 };
 

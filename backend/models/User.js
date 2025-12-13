@@ -71,13 +71,26 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, 'Other skill must be less than 50 characters'],
     default: null
+  },
+  emergencyContact: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Emergency contact must be less than 100 characters'],
+    default: null
+  },
+  medicalConditions: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Medical conditions must be less than 500 characters'],
+    default: null
+  },
+  isVolunteer: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically
 });
-
-// Note: Indexes are automatically created by 'unique: true' and 'index: true' in schema fields
-// No need for explicit schema.index() calls to avoid duplicate index warnings
 
 const User = mongoose.model('User', userSchema);
 
