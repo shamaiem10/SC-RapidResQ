@@ -4,7 +4,7 @@ const communityPostSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['Blood Needed', 'Missing Person', 'Medical Emergency', 'Shelter Needed', 'Food / Water', 'Disaster Help'],
+      enum: ['Blood Needed', 'Missing Person', 'Medical Emergency', 'Shelter Needed', 'Food / Water', 'Disaster Help', 'Life in Danger'],
       required: true
     },
     title: {
