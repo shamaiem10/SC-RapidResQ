@@ -64,7 +64,7 @@
 
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const User = require('../models/UserSchema');
 const CommunityPost = require('../models/CommunityPost');
 
 /**

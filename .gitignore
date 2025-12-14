@@ -23,6 +23,33 @@ dist/
 build/
 data/
 
+# Package lock files (optional - some teams prefer to keep them)
+package-lock.json
+
+# ANTLR generated files (regenerate from grammar)
+*Lexer.js
+*Parser.js
+*Visitor.js
+*Listener.js
+*.tokens
+*.interp
+*.old
+
+# ANTLR tool jar files (large binaries - download separately)  
+*.jar
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation files (if not needed in repo)
 QUICK_START.md
 TEST_CASES.md
 MONGODB_SETUP.md
+PARSING_ASSIGNMENT_QUESTION.md
+CONCURRENT_ASSIGNMENT_QUESTION.md
+
+# System files
+*.swp
+*.swo
+*~

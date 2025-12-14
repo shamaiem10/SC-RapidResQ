@@ -5,7 +5,7 @@
  * - Contracts (preconditions, postconditions, mutation policies)
  */
 
-const User = require('../models/User');
+const User = require('../models/UserSchema');
 const Login = require('../models/Login');
 const { validateLogin, validateSignup } = require('../utils/validation');
 const bcrypt = require('bcrypt');
