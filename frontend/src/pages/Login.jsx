@@ -1,21 +1,10 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./Login.css";
 
-// Dynamic API URL for mobile compatibility
-const getApiBaseUrl = () => {
-  // If accessing via IP (mobile), use current host's IP
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `http://${window.location.hostname}:5000/api`;
-  }
-  // Default localhost for development
-  return "http://localhost:5000/api";
-};
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = "http://localhost:5000/api";
 
 const Login = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -116,10 +105,10 @@ const Login = () => {
         setFormData({ username: "", password: "" });
         setErrors({});
         
-        // Navigate to dashboard after successful login
+        // Clear success message after 5 seconds
         setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500);
+          setSuccessMessage("");
+        }, 5000);
       } else {
         // Handle validation errors from server
         if (data.errors && Array.isArray(data.errors)) {
@@ -138,11 +127,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      if (error.message.includes('Failed to fetch')) {
-        setErrors({ submit: `Cannot connect to server. Using: ${API_BASE_URL}. Make sure backend is running.` });
-      } else {
-        setErrors({ submit: "Network error. Please check your connection and try again." });
-      }
+      setErrors({ submit: "Network error. Please check your connection and try again." });
     } finally {
       setIsSubmitting(false);
     }

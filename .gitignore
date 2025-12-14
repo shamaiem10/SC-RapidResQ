@@ -21,6 +21,7 @@ Thumbs.db
 # Build output
 dist/
 build/
+data/
 
 QUICK_START.md
 TEST_CASES.md

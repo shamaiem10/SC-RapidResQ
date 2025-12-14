@@ -1,22 +1,11 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./Signup.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-// Dynamic API URL for mobile compatibility
-const getApiBaseUrl = () => {
-  // If accessing via IP (mobile), use current host's IP
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `http://${window.location.hostname}:5000/api`;
-  }
-  // Default localhost for development
-  return "http://localhost:5000/api";
-};
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = "http://localhost:5000/api";
 
 const Signup = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -248,10 +237,10 @@ const Signup = () => {
         setSkills([]);
         setErrors({});
         
-        // Navigate to dashboard after successful signup
+        // Clear success message after 5 seconds
         setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500);
+          setSuccessMessage("");
+        }, 5000);
       } else {
         // Handle validation errors from server
         if (data.errors && Array.isArray(data.errors)) {
