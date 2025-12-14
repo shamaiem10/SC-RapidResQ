@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Phone,
   MapPin,
   AlertTriangle
 } from "lucide-react";
+import { handlePanicButton } from "../utils/panicButton";
 import "./Community.css";
 
 function CommunityBoard() {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("All");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -99,10 +102,44 @@ function CommunityBoard() {
   };
 
   // Open WhatsApp chat immediately
-  const openWhatsApp = (phone) => {
+  const openWhatsApp = (phone, postTitle = "", postLocation = "") => {
     if (!phone) return;
-    const cleanNumber = phone.replace(/\D/g, "");
-    const url = `https://wa.me/${cleanNumber}`;
+    let cleanNumber = phone.replace(/\D/g, "");
+    
+    // Ensure the number has country code for WhatsApp
+    // If number starts with 0, remove it (common in some countries)
+    if (cleanNumber.startsWith('0')) {
+      cleanNumber = cleanNumber.substring(1);
+    }
+    
+    // If number doesn't start with country code and is 10 digits, assume Pakistan (92)
+    // Pakistan numbers are typically 10 digits after country code
+    if (cleanNumber.length === 10 && !cleanNumber.startsWith('92')) {
+      cleanNumber = '92' + cleanNumber;
+    }
+    // If number is 11 digits and starts with 9 (Pakistan mobile), add country code
+    else if (cleanNumber.length === 11 && cleanNumber.startsWith('9') && !cleanNumber.startsWith('92')) {
+      cleanNumber = '92' + cleanNumber;
+    }
+    // If number is less than 10 digits, it's invalid
+    else if (cleanNumber.length < 10) {
+      alert('Invalid phone number format');
+      return;
+    }
+    
+    // Create a pre-filled message
+    let message = "Hello, I saw your emergency post";
+    if (postTitle) {
+      message += ` about "${postTitle}"`;
+    }
+    if (postLocation) {
+      message += ` in ${postLocation}`;
+    }
+    message += ". How can I help?";
+    
+    // Encode the message for URL
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -219,7 +256,7 @@ function CommunityBoard() {
                   <span>{post.author}</span>
                   <button
                     className="respond-btn"
-                    onClick={() => openWhatsApp(post.phone)}
+                    onClick={() => openWhatsApp(post.phone, post.title, post.location)}
                   >
                     Respond on WhatsApp
                   </button>
@@ -231,7 +268,7 @@ function CommunityBoard() {
       </main>
 
       {/* Floating Emergency Button */}
-      <button className="fab">
+      <button className="fab" onClick={() => handlePanicButton(navigate)}>
         <AlertTriangle />
       </button>
 

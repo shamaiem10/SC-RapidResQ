@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Ai.css';
 import { AlertTriangle } from 'lucide-react';
+import { handlePanicButton } from '../utils/panicButton';
 
 const AIEmergencyPage = () => {
+  const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -382,7 +385,7 @@ const AIEmergencyPage = () => {
 
       
 
-      <button className="fab">
+      <button className="fab" onClick={() => handlePanicButton(navigate)}>
         <AlertTriangle size={24} />
       </button>
       

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './EmergencyNumbers.css';
 import { Phone, Clock, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
+import { handlePanicButton } from '../utils/panicButton';
 
 // Dynamic API URL for mobile compatibility
 const getApiBaseUrl = () => {
@@ -15,6 +17,7 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 const EmergencyNumbers = () => {
+  const navigate = useNavigate();
   const [location, setLocation] = useState(null);
   const [data, setData] = useState({ hospitals: [], emergencyServices: [] });
   const [loading, setLoading] = useState(false);
@@ -251,9 +254,9 @@ const EmergencyNumbers = () => {
       </main>
 
       {/* Emergency Float Button */}
-      <a href="tel:15" className="emergency-float-button">
+      <button className="emergency-float-button" onClick={() => handlePanicButton(navigate)}>
         <AlertTriangle />
-      </a>
+      </button>
       
 
     </div>

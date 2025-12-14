@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Navigation, MapPin, AlertTriangle } from 'lucide-react';
+import { handlePanicButton } from '../utils/panicButton';
 import './SafetyMap.css';
 
 const SafetyMap = () => {
+  const navigate = useNavigate();
   const [location, setLocation] = useState('');
 
   return (
@@ -80,7 +83,7 @@ const SafetyMap = () => {
 
       
 
-      <button className="fab">
+      <button className="fab" onClick={() => handlePanicButton(navigate)}>
         <AlertTriangle />
       </button>
 

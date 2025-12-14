@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Flame, Heart, Car, Droplet, Shield, Zap, AlertTriangle } from 'lucide-react';
 import EmergencyModal from './EmergencyModal';
+import { handlePanicButton } from '../utils/panicButton';
 import './Dashboard.css';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEmergency, setSelectedEmergency] = useState(null);
 
@@ -176,7 +179,10 @@ function Dashboard() {
     // Floating Emergency Button
     React.createElement(
       'button',
-      { className: 'fab' },
+      { 
+        className: 'fab',
+        onClick: () => handlePanicButton(navigate)
+      },
       React.createElement(AlertTriangle)
     )
   );

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Account.css";
 import { AlertTriangle } from "lucide-react";
+import { handlePanicButton } from "../utils/panicButton";
 
 // Dynamic API URL for mobile compatibility
 const getApiBaseUrl = () => {
@@ -13,6 +15,7 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 function AccountPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -166,8 +169,15 @@ function AccountPage() {
       });
       setUserLoggedIn(false);
       alert('You have been logged out successfully!');
+      // Redirect to landing page
+      navigate("/");
     }
   }
+
+  // Handle panic button click - uses utility function
+  const onPanicButtonClick = () => {
+    handlePanicButton(navigate, setLoading);
+  };
 
   // Show loading state
   if (loading) {
@@ -368,7 +378,7 @@ function AccountPage() {
       </main>
 
       {/* SOS BUTTON */}
-      <button className="fab">
+      <button className="fab" onClick={onPanicButtonClick} disabled={loading}>
         <AlertTriangle />
       </button>
     </div>

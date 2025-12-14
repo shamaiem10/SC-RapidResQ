@@ -66,6 +66,27 @@
   transition: 0.25s;
 }
 
+/* Password input with toggle button needs extra right padding */
+.input-group input[type="password"],
+.input-group input[type="text"][name="password"] {
+  padding-right: 50px;
+}
+
+/* Hide browser autofill/password manager icons for password fields */
+.input-group input[type="password"]::-webkit-credentials-auto-fill-button,
+.input-group input[type="password"]::-webkit-strong-password-auto-fill-button,
+.input-group input[type="password"]::-ms-reveal,
+.input-group input[type="password"]::-ms-clear {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 .input-group input:focus {
   outline: none;
   border-color: #802121;
@@ -81,6 +102,39 @@
   transform: translateY(-50%);
   font-size: 20px;
   color: #777;
+}
+
+/* Password toggle button */
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 18px;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.password-toggle i {
+  display: block;
+  line-height: 1;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: #802121;
 }
 
 /* ========= LOGIN BUTTON ========= */

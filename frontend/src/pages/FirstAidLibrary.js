@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './FirstAidLibrary.css';
 import EmergencyModal from './EmergencyModal';
 import { BookOpen, Heart, Clock,AlertCircle, Droplet, Scissors, Activity, AlertTriangle } from 'lucide-react';
+import { handlePanicButton } from '../utils/panicButton';
 
 // Step-by-step guides for each topic
 const guides = {
@@ -49,6 +51,7 @@ const guides = {
 };
 
 const FirstAidLibrary = () => {
+  const navigate = useNavigate();
   const [selectedGuide, setSelectedGuide] = useState(null);
 
   const openGuide = (key) => setSelectedGuide(key);
@@ -195,7 +198,9 @@ const FirstAidLibrary = () => {
         steps={selectedGuide ? guides[selectedGuide] : []}
       />
 
-      <button className="emergency-float-button"><AlertTriangle /></button>
+      <button className="emergency-float-button" onClick={() => handlePanicButton(navigate)}>
+        <AlertTriangle />
+      </button>
     </div>
   );
 };

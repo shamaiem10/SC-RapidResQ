@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const emergencyRoutes = require('./routes/emergencyRoutes');
 const chatRoutes = require('./routes/chat');
 const communityRoutes = require('./routes/community');
+const panicRoutes = require('./routes/panic');
 
 dotenv.config();
 
@@ -40,11 +41,20 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Debug: Log all incoming API requests (for development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api', (req, res, next) => {
+    console.log(`[${req.method}] ${req.path}`);
+    next();
+  });
+}
+
 // API Routes
 app.use('/api', authRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api', chatRoutes);
 app.use('/api', communityRoutes);
+app.use('/api', panicRoutes);
 
 // 404 Handler
 app.use((req, res) => {

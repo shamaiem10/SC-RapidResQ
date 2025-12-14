@@ -65,6 +65,9 @@
 /* ========= INPUT GROUP ========= */
 .input-group {
   position: relative;
+  min-height: 50px; /* Prevent layout shift when error messages appear */
+  margin-bottom: 24px; /* Space for error messages below */
+  padding-bottom: 0; /* Ensure icons aren't affected by error message space */
 }
 
 .input-group input,
@@ -95,6 +98,64 @@
   transform: translateY(-50%);
   font-size: 20px;
   color: #777;
+  z-index: 5;
+  pointer-events: none; /* Prevent icon from interfering with clicks */
+}
+
+/* Password toggle button */
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 18px;
+  transition: color 0.2s;
+  z-index: 10;
+  /* Keep icon fixed relative to input, not affected by error messages */
+  margin-top: 0;
+}
+
+.password-toggle i {
+  display: block;
+  line-height: 1;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: #802121;
+}
+
+/* Password input with toggle button needs extra right padding */
+.input-group input[type="password"],
+.input-group input[type="text"][name="password"] {
+  padding-right: 50px;
+}
+
+/* Hide browser autofill/password manager icons for password fields */
+.input-group input[type="password"]::-webkit-credentials-auto-fill-button,
+.input-group input[type="password"]::-webkit-strong-password-auto-fill-button,
+.input-group input[type="password"]::-ms-reveal,
+.input-group input[type="password"]::-ms-clear {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* ========= SKILLS SECTION ========= */
@@ -118,6 +179,48 @@
 
 .skill-item {
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.skill-item input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  /* Reset any default browser styling */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #d3d3d3;
+  border-radius: 4px;
+  background-color: white;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.skill-item input[type="checkbox"]:checked {
+  background-color: #ff5f6d;
+  border-color: #ff5f6d;
+}
+
+.skill-item input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.skill-item input[type="checkbox"]:hover {
+  border-color: #802121;
 }
 
 .other-skill input {
@@ -248,6 +351,12 @@
   font-size: 12px;
   margin-top: 5px;
   padding-left: 5px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  /* Ensure error message doesn't affect input or icon positioning */
+  pointer-events: none;
 }
 
 .field-error i {

@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Signup.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
 const Signup = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -23,6 +24,7 @@ const Signup = () => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSkillChange = (skill) => {
     if (skills.includes(skill)) {
@@ -222,6 +224,14 @@ const Signup = () => {
 
       if (response.ok && data.success) {
         setSuccessMessage(data.message || "Account created successfully!");
+        
+        // Store user data in localStorage for Account page auto-fill
+        localStorage.setItem('currentUser', JSON.stringify({
+          username: data.data?.username || formData.username.trim(),
+          email: data.data?.email || formData.email.trim(),
+          fullName: data.data?.fullName || formData.fullName.trim()
+        }));
+        
         setFormData({
           fullName: "",
           username: "",
@@ -237,10 +247,10 @@ const Signup = () => {
         setSkills([]);
         setErrors({});
         
-        // Clear success message after 5 seconds
+        // Redirect to dashboard after 1 second
         setTimeout(() => {
-          setSuccessMessage("");
-        }, 5000);
+          navigate("/dashboard");
+        }, 1000);
       } else {
         // Handle validation errors from server
         if (data.errors && Array.isArray(data.errors)) {
@@ -374,15 +384,25 @@ const Signup = () => {
               <div className="input-group">
                 <i className="bi bi-lock-fill icon"></i>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={errors.password ? "error" : ""}
+                  autoComplete="new-password"
                   required
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={0}
+                >
+                  <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                </button>
                 {errors.password && (
                   <span className="field-error">
                     <i className="bi bi-exclamation-triangle"></i>

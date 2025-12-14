@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -13,6 +14,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Client-side validation
   const validateField = (name, value) => {
@@ -105,10 +107,26 @@ const Login = () => {
         setFormData({ username: "", password: "" });
         setErrors({});
         
-        // Clear success message after 5 seconds
+        // Store user data in localStorage for Account page
+        if (data.data) {
+          localStorage.setItem('currentUser', JSON.stringify({
+            username: data.data.username,
+            email: data.data.email || '',
+            fullName: data.data.fullName || ''
+          }));
+        } else {
+          // Fallback: store username from form
+          localStorage.setItem('currentUser', JSON.stringify({
+            username: formData.username.trim(),
+            email: '',
+            fullName: ''
+          }));
+        }
+        
+        // Redirect to dashboard after 1 second
         setTimeout(() => {
-          setSuccessMessage("");
-        }, 5000);
+          navigate("/dashboard");
+        }, 1000);
       } else {
         // Handle validation errors from server
         if (data.errors && Array.isArray(data.errors)) {
@@ -186,15 +204,25 @@ const Login = () => {
             <div className="input-group">
               <i className="bi bi-lock icon"></i>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className={errors.password ? "error" : ""}
+                autoComplete="current-password"
                 required
               />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={0}
+              >
+                <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+              </button>
               {errors.password && (
                 <span className="field-error">
                   <i className="bi bi-exclamation-triangle"></i>
