@@ -2,6 +2,66 @@
  * Panic Button Route
  * Handles emergency panic button functionality
  */
+
+/**
+ * =========================================================
+ * PSEUDO UNIT TESTS – Panic Button Route (/api/panic)
+ * =========================================================
+ * These pseudo-tests describe how the panic button feature
+ * is unit-tested WITHOUT executing real test code.
+ * They do not interfere with implementation.
+ *
+ * PSEUDO TEST 1: Valid SOS Alert (Normal Case)
+ * GIVEN:
+ *   - username exists
+ *   - user has valid phone and location
+ * WHEN:
+ *   - POST /api/panic is called
+ * THEN:
+ *   - emergency post is created
+ *   - response status = 201
+ *
+ * PSEUDO TEST 2: Missing Username
+ * GIVEN:
+ *   - request body does not contain username
+ * WHEN:
+ *   - POST /api/panic is called
+ * THEN:
+ *   - request is rejected
+ *   - response status = 400
+ *
+ * PSEUDO TEST 3: User Not Found
+ * GIVEN:
+ *   - username does not exist in database
+ * WHEN:
+ *   - POST /api/panic is called
+ * THEN:
+ *   - no emergency post is created
+ *   - response status = 404
+ *
+ * PSEUDO TEST 4: Missing Phone or Location
+ * GIVEN:
+ *   - user exists
+ *   - phone OR location is missing
+ * WHEN:
+ *   - panic button is triggered
+ * THEN:
+ *   - alert is rejected
+ *   - response status = 400
+ *
+ * PSEUDO TEST 5: Stress Scenario
+ * GIVEN:
+ *   - multiple valid panic requests sent rapidly
+ * WHEN:
+ *   - system processes SOS alerts
+ * THEN:
+ *   - system remains stable
+ *   - all requests return valid responses
+ *
+ * =========================================================
+ */
+
+
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
