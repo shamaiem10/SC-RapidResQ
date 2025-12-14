@@ -1,17 +1,16 @@
 /**
- * Chatbot Service - Optimized Implementation
- * Addresses recursive implementation issues:
- * - Uses loops instead of deep recursion
- * - Implements caching for common emergency answers
- * - Separates concerns (intent detection, response generation, logging)
- * - Clear stopping conditions
+ * Chatbot Service - Full Implementation for RapidResQ
+ * Features:
+ * - Handles layered/multi-part emergencies (recursive)
+ * - Caching of common emergency responses
+ * - AI fallback for unknown emergencies
+ * - Logging and clear stopping conditions
  * - No side effects on global data
  */
 
-// Cache for common emergency responses (memoization)
 const responseCache = new Map();
 
-// Common emergency responses cache
+// Common emergency responses
 const commonResponses = {
   'cpr': '🚨 CPR Steps: 1) Call emergency services 2) Place hands on center of chest 3) Push hard and fast (100-120/min) 4) Continue until help arrives',
   'fire': '🔥 Fire Safety: 1) Stay low to avoid smoke 2) Check doors before opening 3) Use stairs, not elevators 4) Call 911 immediately',
@@ -21,96 +20,66 @@ const commonResponses = {
   'choking': '😮 Choking: 1) Encourage coughing if possible 2) Perform Heimlich maneuver 3) Call 911 immediately 4) Continue until object is dislodged'
 };
 
-// Emergency keywords for intent detection
+// Emergency keywords
 const emergencyKeywords = {
   'cpr': ['cpr', 'cardiac', 'heart stopped', 'not breathing'],
   'fire': ['fire', 'burning', 'smoke', 'flame'],
   'earthquake': ['earthquake', 'shaking', 'tremor'],
   'panic attack': ['panic', 'anxiety', 'overwhelmed', 'can\'t breathe'],
-  'bleeding': ['bleeding', 'blood', 'cut', 'wound'],
+  'bleeding': ['bleeding', 'blood', 'cut', 'wound', 'injured'],
   'choking': ['choking', 'can\'t breathe', 'stuck in throat']
 };
 
-// Configuration with clear limits (not hard-coded in logic)
+// Configuration
 const CONFIG = {
   MAX_MESSAGE_LENGTH: 500,
   MAX_CACHE_SIZE: 100,
-  MAX_CONVERSATION_TURNS: 50, // Clear stopping condition
-  CACHE_TTL: 3600000 // 1 hour in milliseconds
+  MAX_CONVERSATION_TURNS: 50,
+  CACHE_TTL: 3600000 // 1 hour
 };
 
 /**
- * Intent Detection - Separated responsibility
- * Detects emergency type from user message
- * @param {string} message - User message
- * @returns {string|null} - Detected emergency type or null
+ * Detect single intent from message
  */
 function detectIntent(message) {
-  if (!message || typeof message !== 'string') {
-    return null;
-  }
+  if (!message || typeof message !== 'string') return null;
 
   const lowerMessage = message.toLowerCase();
-  
-  // Loop through emergency types (no recursion)
+
   for (const [emergencyType, keywords] of Object.entries(emergencyKeywords)) {
     for (const keyword of keywords) {
-      if (lowerMessage.includes(keyword)) {
-        return emergencyType;
-      }
+      if (lowerMessage.includes(keyword)) return emergencyType;
     }
   }
-  
+
   return null;
 }
 
 /**
- * Get Cached Response - Memoization to avoid repeated computations
- * @param {string} intent - Emergency intent type
- * @returns {string|null} - Cached response or null
+ * Get cached response
  */
 function getCachedResponse(intent) {
   if (!intent) return null;
-  
+
   const cached = responseCache.get(intent);
   if (cached && (Date.now() - cached.timestamp) < CONFIG.CACHE_TTL) {
     return cached.response;
   }
-  
-  // Check common responses
+
   if (commonResponses[intent]) {
-    // Cache it for future use
-    responseCache.set(intent, {
-      response: commonResponses[intent],
-      timestamp: Date.now()
-    });
+    responseCache.set(intent, { response: commonResponses[intent], timestamp: Date.now() });
     return commonResponses[intent];
   }
-  
+
   return null;
 }
 
 /**
- * Log Interaction - Separated logging responsibility
- * @param {string} userId - User ID
- * @param {string} message - User message
- * @param {string} response - Bot response
- * @param {string} intent - Detected intent
- */
-function logInteraction(userId, message, response, intent) {
-  // Log without side effects on global data
-  console.log(`[Chatbot] User: ${userId}, Intent: ${intent || 'general'}, Message length: ${message.length}`);
-  // In production, this could write to a separate logging service
-}
-
-/**
- * Clean Cache - Prevents memory overflow
- * Removes old cache entries when cache size exceeds limit
+ * Clean cache to avoid memory overflow
  */
 function cleanCache() {
   if (responseCache.size > CONFIG.MAX_CACHE_SIZE) {
     const entries = Array.from(responseCache.entries());
-    // Sort by timestamp and remove oldest entries
     entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
     const toRemove = entries.slice(0, entries.length - CONFIG.MAX_CACHE_SIZE);
     toRemove.forEach(([key]) => responseCache.delete(key));
@@ -118,15 +87,43 @@ function cleanCache() {
 }
 
 /**
- * Process Message - Main service function using loops (not recursion)
- * This replaces recursive implementations with iterative approach
- * @param {string} message - User message
- * @param {string} userId - User ID
- * @param {Array} conversationHistory - Previous messages (limited size)
- * @returns {Object} - { response: string, intent: string, fromCache: boolean }
+ * Log interaction
+ */
+function logInteraction(userId, message, response, intent) {
+  console.log(`[Chatbot] User: ${userId}, Intent: ${intent || 'general'}, Message length: ${message.length}`);
+}
+
+/**
+ * Recursive detection for layered emergencies
+ */
+function detectLayeredEmergencies(message, detectedIntents = new Set()) {
+  if (!message || message.length === 0) return [];
+
+  const responses = [];
+
+  for (const [intent, keywords] of Object.entries(emergencyKeywords)) {
+    if (detectedIntents.has(intent)) continue;
+
+    for (const keyword of keywords) {
+      if (message.toLowerCase().includes(keyword)) {
+        detectedIntents.add(intent);
+        const response = getCachedResponse(intent) || commonResponses[intent];
+        if (response) responses.push(response);
+
+        const remainingMessage = message.toLowerCase().replace(keyword, '');
+        responses.push(...detectLayeredEmergencies(remainingMessage, detectedIntents));
+        return responses;
+      }
+    }
+  }
+
+  return responses;
+}
+
+/**
+ * Process message (with layered emergency support)
  */
 function processMessage(message, userId, conversationHistory = []) {
-  // Clear stopping condition: Check message length
   if (!message || message.length > CONFIG.MAX_MESSAGE_LENGTH) {
     return {
       response: 'Please provide a clear, concise message (max 500 characters).',
@@ -135,7 +132,6 @@ function processMessage(message, userId, conversationHistory = []) {
     };
   }
 
-  // Clear stopping condition: Check conversation length
   if (conversationHistory.length >= CONFIG.MAX_CONVERSATION_TURNS) {
     return {
       response: 'This conversation has reached the maximum length. Please start a new conversation.',
@@ -144,58 +140,48 @@ function processMessage(message, userId, conversationHistory = []) {
     };
   }
 
-  // Step 1: Detect intent (separated responsibility)
-  const intent = detectIntent(message);
-  
-  // Step 2: Check cache first (memoization - avoids repeated computations)
-  const cachedResponse = getCachedResponse(intent);
-  if (cachedResponse) {
-    logInteraction(userId, message, cachedResponse, intent);
+  const layeredResponses = detectLayeredEmergencies(message);
+
+  if (layeredResponses.length > 0) {
+    const combinedResponse = layeredResponses.join('\n\n');
+    logInteraction(userId, message, combinedResponse, 'layered-emergency');
     return {
-      response: cachedResponse,
-      intent: intent,
+      response: combinedResponse,
+      intent: 'layered-emergency',
       fromCache: true
     };
   }
 
-  // Step 3: If no cache, return null to indicate AI should generate response
-  // The actual AI call remains in chat.js to maintain existing functionality
+  // Single intent fallback
+  const intent = detectIntent(message);
+  const cachedResponse = getCachedResponse(intent);
+  if (cachedResponse) {
+    logInteraction(userId, message, cachedResponse, intent);
+    return { response: cachedResponse, intent, fromCache: true };
+  }
+
   logInteraction(userId, message, 'AI-generated', intent);
-  
-  return {
-    response: null, // Signal to use AI
-    intent: intent,
-    fromCache: false
-  };
+  return { response: null, intent, fromCache: false };
 }
 
 /**
- * Generate Response with AI - Separated AI generation responsibility
- * This can be called from chat.js when cache miss occurs
- * @param {Array} messages - Conversation messages for AI
- * @param {Function} aiClient - AI client function (from chat.js)
- * @returns {Promise<string>} - AI generated response
+ * Generate AI response if no cached response exists
  */
 async function generateAIResponse(messages, aiClient) {
   if (!aiClient || typeof aiClient !== 'function') {
     throw new Error('AI client function is required');
   }
 
-  // Use loop-based approach, not recursion
   try {
     const response = await aiClient(messages);
-    
-    // Cache the response if intent was detected
+
     const lastUserMessage = messages[messages.length - 2]?.content || '';
     const intent = detectIntent(lastUserMessage);
     if (intent && response) {
-      responseCache.set(intent, {
-        response: response,
-        timestamp: Date.now()
-      });
-      cleanCache(); // Prevent memory overflow
+      responseCache.set(intent, { response, timestamp: Date.now() });
+      cleanCache();
     }
-    
+
     return response;
   } catch (error) {
     console.error('[Chatbot Service] AI generation error:', error);

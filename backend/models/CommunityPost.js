@@ -42,6 +42,14 @@ const communityPostSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    // Delivery records for notifications (e.g., volunteers notified/sms/push status)
+    deliveries: [{
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      channel: { type: String },
+      status: { type: String }, // 'queued' | 'sent' | 'delivered' | 'failed' | 'no-contact'
+      ts: { type: Date, default: Date.now },
+      info: { type: String }
+    }],
     createdAt: {
       type: Date,
       default: Date.now

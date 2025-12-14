@@ -46,8 +46,27 @@ cd backend/parsing
 wget https://www.antlr.org/download/antlr-4.9.3-complete.jar
 
 # 2. Generate JavaScript parser files from grammar
+
+- Bash / macOS (single line or with backslash continuation):
+
+```bash
 java -cp antlr-4.9.3-complete.jar org.antlr.v4.Tool \
-     -Dlanguage=JavaScript -visitor EmergencyCommand.g4
+  -Dlanguage=JavaScript -visitor EmergencyCommand.g4
+```
+
+- Windows PowerShell (recommended on Windows):
+
+```powershell
+# Single-line (recommended)
+java -jar .\antlr-4.9.3-complete.jar -Dlanguage=JavaScript -visitor EmergencyCommand.g4
+
+# Or multiline with PowerShell backtick ` continuation
+java -jar .\antlr-4.9.3-complete.jar `
+  -Dlanguage=JavaScript `
+  -visitor EmergencyCommand.g4
+```
+
+Note: PowerShell does not accept Bash-style `\` line continuations; use the backtick `` ` `` or run the command on one line. Also `java -jar ...` avoids classpath differences on Windows.
 ```
 
 **Note:** Generated parser files are excluded from git - they're created fresh from the grammar file.

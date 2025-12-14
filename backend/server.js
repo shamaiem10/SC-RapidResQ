@@ -11,6 +11,7 @@ const emergencyRoutes = require('./routes/emergencyRoutes');
 const chatRoutes = require('./routes/chat');
 const communityRoutes = require('./routes/community');
 const panicRoutes = require('./routes/panic');
+const alertRoutes = require('./routes/alerts'); // <-- new alerts route
 
 dotenv.config();
 
@@ -22,22 +23,20 @@ connectDB();
 // Middleware - Allow CORS for development (localhost and local network)
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    
-    // Allow localhost and local network IPs
+    if (!origin) return callback(null, true); // allow curl, mobile apps
+
     if (origin.includes('localhost') || 
         origin.includes('127.0.0.1') ||
         origin.match(/http:\/\/192\.168\.\d+\.\d+:3000/) ||
         origin.match(/http:\/\/10\.\d+\.\d+\.\d+:3000/)) {
       return callback(null, true);
     }
-    
-    // Reject other origins
+
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -49,12 +48,13 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// API Routes
+// ----------------- API ROUTES -----------------
 app.use('/api', authRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api', chatRoutes);
 app.use('/api', communityRoutes);
 app.use('/api', panicRoutes);
+app.use('/api/alerts', alertRoutes); // <-- register alerts route
 
 // 404 Handler
 app.use((req, res) => {

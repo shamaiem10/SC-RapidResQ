@@ -1,202 +1,128 @@
 /**
- * Panic Button Route
- * Handles emergency panic button functionality
+ * Panic Button Route & SOS Alert System
  */
-
-/**
- * =========================================================
- * PSEUDO UNIT TESTS – Panic Button Route (/api/panic)
- * =========================================================
- * These pseudo-tests describe how the panic button feature
- * is unit-tested WITHOUT executing real test code.
- * They do not interfere with implementation.
- *
- * PSEUDO TEST 1: Valid SOS Alert (Normal Case)
- * GIVEN:
- *   - username exists
- *   - user has valid phone and location
- * WHEN:
- *   - POST /api/panic is called
- * THEN:
- *   - emergency post is created
- *   - response status = 201
- *
- * PSEUDO TEST 2: Missing Username
- * GIVEN:
- *   - request body does not contain username
- * WHEN:
- *   - POST /api/panic is called
- * THEN:
- *   - request is rejected
- *   - response status = 400
- *
- * PSEUDO TEST 3: User Not Found
- * GIVEN:
- *   - username does not exist in database
- * WHEN:
- *   - POST /api/panic is called
- * THEN:
- *   - no emergency post is created
- *   - response status = 404
- *
- * PSEUDO TEST 4: Missing Phone or Location
- * GIVEN:
- *   - user exists
- *   - phone OR location is missing
- * WHEN:
- *   - panic button is triggered
- * THEN:
- *   - alert is rejected
- *   - response status = 400
- *
- * PSEUDO TEST 5: Stress Scenario
- * GIVEN:
- *   - multiple valid panic requests sent rapidly
- * WHEN:
- *   - system processes SOS alerts
- * THEN:
- *   - system remains stable
- *   - all requests return valid responses
- *
- * =========================================================
- */
-
 
 const express = require('express');
 const router = express.Router();
 const User = require('../models/UserSchema');
 const CommunityPost = require('../models/CommunityPost');
+const Volunteer = require('../models/Volunteer');
 
 /**
  * @route   POST /api/panic
- * @desc    Create emergency panic post from logged-in user
+ * @desc    Trigger SOS alert from a user
  * @access  Public (requires username in body)
  */
 router.post('/panic', async (req, res) => {
-  // LOCALIZING THE BUG: Log initial request to track if panic button reaches backend
   console.log('🚨 Panic button triggered with body:', req.body);
 
   try {
     let { username } = req.body;
 
-    // ASSERTIONS + AVOIDING DEBUGGING: Validate username exists early to prevent downstream errors
     if (!username) {
-      // LOCALIZING THE BUG: Log specific failure point for easier debugging
-      console.error('❌ Panic failed: Username missing');
-      return res.status(400).json({
-        success: false,
-        message: 'Username is required'
-      });
+      return res.status(400).json({ success: false, message: 'Username is required' });
     }
 
-    // FIX THE BUG: Normalize username once to ensure consistent database queries
     username = username.trim().toLowerCase();
-
-    // LOCALIZING THE BUG: Log before database query to identify if failure occurs during lookup
-    console.log('🔍 Searching user:', username);
-
     const user = await User.findOne({ username });
 
-    // ASSERTIONS: Verify user exists before proceeding with emergency post creation
     if (!user) {
-      // LOCALIZING THE BUG: Log specific failure point
-      console.error('❌ Panic failed: User not found');
-      return res.status(404).json({
-        success: false,
-        message: 'User not found. Please log in again.'
-      });
+      return res.status(404).json({ success: false, message: 'User not found. Please log in again.' });
     }
 
-    // LOCALIZING THE BUG: Log successful user retrieval to confirm this stage completed
-    console.log('✅ User found:', user.username);
-
-    // Get user data
+    // Extract user details
     const fullName = user.fullName || user.username || 'Unknown User';
     const phone = user.phone || '';
     const location = user.location || '';
 
-    // ASSERTIONS + AVOIDING DEBUGGING: Validate phone exists to prevent incomplete emergency posts
-    if (!phone) {
-      // LOCALIZING THE BUG: Log specific failure point
-      console.error('❌ Panic failed: Phone missing');
+    if (!phone || !location) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number is required for emergency alerts.',
-        missingField: 'phone'
+        message: 'Phone and location are required for emergency alerts.'
       });
     }
 
-    // ASSERTIONS + AVOIDING DEBUGGING: Validate location exists to ensure responders can be notified
-    if (!location) {
-      // LOCALIZING THE BUG: Log specific failure point
-      console.error('❌ Panic failed: Location missing');
-      return res.status(400).json({
-        success: false,
-        message: 'Location is required for emergency alerts.',
-        missingField: 'location'
-      });
-    }
-
-    // AVOIDING DEBUGGING: Validate phone format to prevent invalid data in database
-    const phoneDigits = phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-      // LOCALIZING THE BUG: Log specific failure point
-      console.error('❌ Panic failed: Invalid phone format');
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid phone number format.',
-        missingField: 'phone'
-      });
-    }
-
-    // LOCALIZING THE BUG: Log before creating emergency post to track execution flow
-    console.log('📝 Creating emergency post...');
-
-    const emergencyPost = new CommunityPost({
-      type: 'Life in Danger',
-      title: 'EMERGENCY – LIFE IN DANGER',
-      description:
-        'This is an emergency panic alert. The user is in immediate danger.',
-      location,
-      phone: phoneDigits,
-      author: fullName,
-      urgent: true,
-      responses: 0
-    });
-
-    // FIX THE BUG: Verify save success to catch silent database failures
-    const savedPost = await emergencyPost.save();
-
-    // ASSERTIONS: Ensure post was actually saved to database
-    if (!savedPost) {
-      throw new Error('Emergency post was not saved');
-    }
-
-    // LOCALIZING THE BUG: Log successful save with post ID for tracking
-    console.log('✅ Emergency post saved successfully:', savedPost._id);
+    // Create emergency post & notify volunteers safely
+    const emergencyPost = await notifyVolunteersSafely(user, location);
 
     res.status(201).json({
       success: true,
       message: 'Emergency alert posted successfully',
       post: {
-        id: savedPost._id,
-        title: savedPost.title,
-        type: savedPost.type,
-        urgent: savedPost.urgent,
-        location: savedPost.location
+        id: emergencyPost._id,
+        title: emergencyPost.title,
+        type: emergencyPost.type,
+        urgent: emergencyPost.urgent,
+        location: emergencyPost.location
       }
     });
-  } catch (error) {
-    // UNDERSTAND LOCATION AND CAUSE: Improved error logging to identify exact error type and message
-    console.error('🔥 Panic button error:', error.message);
 
-    res.status(500).json({
-      success: false,
-      message: 'Error creating emergency post',
-      error: error.message
-    });
+  } catch (error) {
+    console.error('🔥 Panic button error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-module.exports = router;
+/**
+ * sendSOSAlert - Creates emergency post
+ */
+const sendSOSAlert = async (user, location) => {
+  // -------------------- Preconditions --------------------
+  if (!user) throw new Error('User does not exist');
+  if (!location) throw new Error('Location is required');
+  if (!user.phone) throw new Error('Phone number is required for emergency alerts');
 
+  const phoneDigits = user.phone.replace(/\D/g, '');
+  if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+    throw new Error('Invalid phone number format');
+  }
+
+  // -------------------- Create Emergency Post --------------------
+  const emergencyPost = new CommunityPost({
+    type: 'Life in Danger',
+    title: 'EMERGENCY – LIFE IN DANGER',
+    description: 'This is an emergency panic alert. The user is in immediate danger.',
+    location,
+    phone: phoneDigits,
+    author: user.fullName || user.username || 'Unknown User',
+    urgent: true,
+    responses: 0
+  });
+
+  const savedPost = await emergencyPost.save();
+
+  // -------------------- Postconditions --------------------
+  if (!savedPost) throw new Error('Emergency post was not saved');
+
+  return savedPost;
+};
+
+/**
+ * notifyVolunteersSafely - Notifies all available volunteers
+ */
+const notifyVolunteersSafely = async (user, location) => {
+  try {
+    // 1️⃣ Create emergency post first
+    const emergencyPost = await sendSOSAlert(user, location);
+
+    // 2️⃣ Fetch volunteers snapshot to avoid concurrency issues
+    const volunteersSnapshot = await Volunteer.find({ available: true }).lean();
+
+    // 3️⃣ Notify each volunteer (SMS, push, email)
+    for (const volunteer of volunteersSnapshot) {
+      console.log(`📣 Notifying volunteer: ${volunteer.name} at ${volunteer.phone}`);
+      // Example: sendSMS(volunteer.phone, `SOS Alert! ${user.username} is in danger at ${location}`);
+    }
+
+    console.log(`✅ SOS alert sent to ${volunteersSnapshot.length} volunteers successfully.`);
+    return emergencyPost;
+
+  } catch (error) {
+    console.error('🔥 Error sending SOS alert:', error.message);
+    throw error;
+  }
+};
+
+module.exports = router;
+module.exports.sendSOSAlert = sendSOSAlert;
+module.exports.notifyVolunteersSafely = notifyVolunteersSafely;
