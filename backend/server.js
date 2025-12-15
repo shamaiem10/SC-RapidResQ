@@ -13,6 +13,7 @@ const communityRoutes = require('./routes/community');
 const panicRoutes = require('./routes/panic');
 const alertRoutes = require('./routes/alerts'); // <-- new alerts route
 
+
 dotenv.config();
 
 const app = express();

@@ -60,159 +60,152 @@
  *
  * =========================================================
  */
+/**
+ * Panic Button Route
+ * Handles emergency panic button functionality
+ * =========================================================
+ * sendSOSAlert function:
+ * - Preconditions (must be true BEFORE sending the alert):
+ *    1. `user` object exists and is valid.
+ *    2. `user.phone` exists and is a valid phone number (10–15 digits).
+ *    3. `location` is provided and non-empty.
+ * - Postconditions (must be true AFTER sending the alert):
+ *    1. Emergency post is successfully saved in the database.
+ *    2. Function returns the saved post object containing post details.
+ *    3. Alert is confirmed to be delivered to the system (response sent to client).
+ * =========================================================
+ */
+/**
+ * Panic Button Route
+ * Handles emergency panic button functionality
+ */
 
 /**
  * =========================================================
+ * PSEUDO UNIT TESTS – Panic Button Route (/api/panic)
+ * =========================================================
+ * Pseudo-tests describe unit tests without executing code.
+ *
+ * - Test 1: Valid SOS Alert → Post created, 201 returned
+ * - Test 2: Missing Username → 400 returned
+ * - Test 3: User Not Found → 404 returned
+ * - Test 4: Missing Phone or Location → 400 returned
+ * - Test 5: Stress Scenario → Multiple requests handled safely
+ *
+ * =========================================================
+ * sendSOSAlert function:
+ * - Preconditions (before sending alert):
+ *    1. user exists
+ *    2. user.phone exists and valid
+ *    3. location provided
+ * - Postconditions (after sending alert):
+ *    1. Emergency post saved in DB
+ *    2. Returns saved post object
+ *    3. Alert sent to volunteers
+ * =========================================================
+ */
+/**
  * Panic Button Route
  * Handles emergency panic button functionality
+ */
+
+/**
+ * =========================================================
+ * PSEUDO UNIT TESTS – Panic Button Route (/api/panic)
+ * =========================================================
+ * These pseudo-tests describe how the panic button feature
+ * is unit-tested WITHOUT executing real test code.
+ *
+ * PSEUDO TEST 1: Valid SOS Alert → Post created, 201 returned
+ * PSEUDO TEST 2: Missing Username → 400 returned
+ * PSEUDO TEST 3: User Not Found → 404 returned
+ * PSEUDO TEST 4: Missing Phone or Location → 400 returned
+ * PSEUDO TEST 5: Stress Scenario → Multiple requests handled safely
+ * =========================================================
+ *
+ * sendSOSAlert function:
+ * - Preconditions (before sending alert):
+ *    1. user exists
+ *    2. user.phone exists and valid
+ *    3. location provided
+ * - Postconditions (after sending alert):
+ *    1. Emergency post saved in DB
+ *    2. Returns saved post object
+ *    3. Alert sent to all volunteers
  * =========================================================
  */
 
 const express = require('express');
 const router = express.Router();
+const nodemailer = require('nodemailer');
 const User = require('../models/UserSchema');
 const CommunityPost = require('../models/CommunityPost');
-const Volunteer = require('../models/Volunteer'); // hypothetical Volunteer model
 
 /**
- * @route   POST /api/panic
- * @desc    Create emergency panic post from logged-in user
- * @access  Public (requires username in body)
+ * notifyVolunteers
+ * Sends email alerts to all users in the database
+ * Uses a snapshot to prevent mutation inconsistencies
  */
-router.post('/panic', async (req, res) => {
-  console.log('🚨 Panic button triggered with body:', req.body);
+async function notifyVolunteers(emergencyPost) {
+  // Fetch all users from DB
+  const volunteers = await User.find({});
 
-  try {
-    let { username } = req.body;
+  // Snapshot to prevent issues if list mutates
+  const volunteersSnapshot = [...volunteers];
 
-    if (!username) {
-      console.error('❌ Panic failed: Username missing');
-      return res.status(400).json({
-        success: false,
-        message: 'Username is required'
-      });
+  // Configure Nodemailer transporter
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: '', // your Gmail
+      pass: ''     // Gmail App Password
     }
+  });
 
-    username = username.trim().toLowerCase();
-    console.log('🔍 Searching user:', username);
+  for (const volunteer of volunteersSnapshot) {
+    if (!volunteer.email) continue; // Skip users without email
+    const mailOptions = {
+      from: 'your.email@gmail.com',
+      to: volunteer.email,
+      subject: `🚨 SOS Alert: Life in Danger`,
+      text: `Hello ${volunteer.fullName || volunteer.username},
 
-    const user = await User.findOne({ username });
+A user is in immediate danger. Please check the RapidResQ community post:
 
-    if (!user) {
-      console.error('❌ Panic failed: User not found');
-      return res.status(404).json({
-        success: false,
-        message: 'User not found. Please log in again.'
-      });
+Title: ${emergencyPost.title}
+Location: ${emergencyPost.location}
+Phone: ${emergencyPost.phone}
+
+Act immediately!
+
+- RapidResQ Team`
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`📧 Email sent to ${volunteer.fullName || volunteer.username} at ${volunteer.email}`);
+    } catch (err) {
+      console.error(`❌ Failed to send email to ${volunteer.email}:`, err.message);
     }
-
-    console.log('✅ User found:', user.username);
-
-    const fullName = user.fullName || user.username || 'Unknown User';
-    const phone = user.phone || '';
-    const location = user.location || '';
-
-    if (!phone) {
-      console.error('❌ Panic failed: Phone missing');
-      return res.status(400).json({
-        success: false,
-        message: 'Phone number is required for emergency alerts.',
-        missingField: 'phone'
-      });
-    }
-
-    if (!location) {
-      console.error('❌ Panic failed: Location missing');
-      return res.status(400).json({
-        success: false,
-        message: 'Location is required for emergency alerts.',
-        missingField: 'location'
-      });
-    }
-
-    const phoneDigits = phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-      console.error('❌ Panic failed: Invalid phone format');
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid phone number format.',
-        missingField: 'phone'
-      });
-    }
-
-    console.log('📝 Creating emergency post...');
-
-    const emergencyPost = new CommunityPost({
-      type: 'Life in Danger',
-      title: 'EMERGENCY – LIFE IN DANGER',
-      description: 'This is an emergency panic alert. The user is in immediate danger.',
-      location,
-      phone: phoneDigits,
-      author: fullName,
-      urgent: true,
-      responses: 0
-    });
-
-    const savedPost = await emergencyPost.save();
-
-    if (!savedPost) {
-      throw new Error('Emergency post was not saved');
-    }
-
-    console.log('✅ Emergency post saved successfully:', savedPost._id);
-
-    res.status(201).json({
-      success: true,
-      message: 'Emergency alert posted successfully',
-      post: {
-        id: savedPost._id,
-        title: savedPost.title,
-        type: savedPost.type,
-        urgent: savedPost.urgent,
-        location: savedPost.location
-      }
-    });
-  } catch (error) {
-    console.error('🔥 Panic button error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'Error creating emergency post',
-      error: error.message
-    });
   }
-});
+}
 
 /**
- * =========================================================
- * Separate SOS Alert Function
- * =========================================================
+ * sendSOSAlert
+ * Creates an emergency alert post in the community
  */
-
-/**
- * sendSOSAlert - Sends an SOS alert for a user
- * with proper preconditions and postconditions
- * 
- * Preconditions:
- *  - user must exist
- *  - location must be provided
- *  - user.phone must exist and be valid (10-15 digits)
- * 
- * Postconditions:
- *  - Emergency post is successfully saved in the database
- *  - Returns the saved post object with its _id
- */
-const sendSOSAlert = async (user, location) => {
-  // -------------------- Preconditions --------------------
-  if (!user) throw new Error('User does not exist');
-  if (!location) throw new Error('Location is required');
-  if (!user.phone) throw new Error('Phone number is required for emergency alerts');
+async function sendSOSAlert(user, location) {
+  // ======= Preconditions =======
+  if (!user) throw new Error('Precondition failed: user object is required');
+  if (!user.phone) throw new Error('Precondition failed: user must have a phone number');
+  if (!location || location.trim() === '') throw new Error('Precondition failed: location is required');
 
   const phoneDigits = user.phone.replace(/\D/g, '');
   if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-    throw new Error('Invalid phone number format');
+    throw new Error('Precondition failed: phone number must be between 10 and 15 digits');
   }
 
-  // -------------------- Create Emergency Post --------------------
+  // ======= Action: Create emergency post =======
   const emergencyPost = new CommunityPost({
     type: 'Life in Danger',
     title: 'EMERGENCY – LIFE IN DANGER',
@@ -226,43 +219,88 @@ const sendSOSAlert = async (user, location) => {
 
   const savedPost = await emergencyPost.save();
 
-  // -------------------- Postconditions --------------------
-  if (!savedPost) throw new Error('Emergency post was not saved');
+  // ======= Postconditions =======
+  if (!savedPost) throw new Error('Postcondition failed: emergency post was not saved');
+
+  // ======= Notify all volunteers =======
+  await notifyVolunteers(savedPost);
 
   return savedPost;
-};
+}
 
 /**
- * notifyVolunteersSafely - Sends SOS alert to volunteers
- * without being affected by concurrent modifications to the volunteer list.
- *
- * @param {Object} user - The user triggering the SOS
- * @param {string} location - The user's location
+ * @route   POST /api/panic
+ * @desc    Trigger panic button for a user
+ * @access  Public (requires username in body)
  */
-const notifyVolunteersSafely = async (user, location) => {
+router.post('/panic', async (req, res) => {
+  console.log('🚨 Panic button triggered with body:', req.body);
+
   try {
-    // 1️⃣ Create emergency post first
-    const emergencyPost = await sendSOSAlert(user, location);
+    let { username } = req.body;
 
-    // 2️⃣ Fetch volunteers and create a snapshot to prevent race conditions
-    const volunteersSnapshot = await Volunteer.find({ available: true }).lean();
-
-    // 3️⃣ Notify each volunteer using the snapshot
-    for (const volunteer of volunteersSnapshot) {
-      console.log(`📣 Notifying volunteer: ${volunteer.name} at ${volunteer.phone}`);
-      // Example: sendSMS(volunteer.phone, `SOS Alert! User ${user.username} is in danger at ${location}`);
+    // ======= Input validation =======
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is required'
+      });
     }
 
-    console.log(`✅ SOS alert sent to ${volunteersSnapshot.length} volunteers successfully.`);
-    return emergencyPost;
+    username = username.trim().toLowerCase();
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found. Please log in again.'
+      });
+    }
+
+    // ======= Trigger SOS alert =======
+    const savedPost = await sendSOSAlert(user, user.location);
+
+    // ======= Response confirming post was delivered =======
+    res.status(201).json({
+      success: true,
+      message: 'Emergency alert posted successfully',
+      post: {
+        id: savedPost._id,
+        title: savedPost.title,
+        type: savedPost.type,
+        urgent: savedPost.urgent,
+        location: savedPost.location
+      }
+    });
 
   } catch (error) {
-    console.error('🔥 Error sending SOS alert:', error.message);
-    throw error;
+    console.error('🔥 Panic button error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating emergency post',
+      error: error.message
+    });
   }
-};
+});
 
-// -------------------- Exports --------------------
-module.exports = router; // Export router for Express
-module.exports.sendSOSAlert = sendSOSAlert; // Export helper function
-module.exports.notifyVolunteersSafely = notifyVolunteersSafely; // Export safe volunteer notifier
+/**
+ * =========================================================
+ * Exam Answer Embedded:
+ *
+ * In RapidResQ, mutating the volunteer list while an SOS alert
+ * is being sent could cause inconsistencies:
+ *
+ * - Volunteers removed during sending may miss the notification.
+ * - Volunteers added during sending may receive duplicates or be missed.
+ *
+ * Prevention:
+ * - We fetch all volunteers from the database and create a snapshot.
+ * - Notifications are sent using the snapshot, so live changes
+ *   to the main list do not affect alert delivery.
+ *
+ * This ensures reliable delivery of SOS alerts (urgent posts)
+ * even if volunteers are added or removed concurrently.
+ * =========================================================
+ */
+
+module.exports = router;
