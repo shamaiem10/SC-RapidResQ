@@ -3,12 +3,16 @@
  * Demonstrates:
  * - Mutability risks & safe handling
  * - Contracts (preconditions, postconditions, mutation policies)
+ * - Little Language–based validation
  */
 
 const User = require('../models/UserSchema');
 const Login = require('../models/Login');
-const { validateLogin, validateSignup } = require('../utils/validation');
 const bcrypt = require('bcrypt');
+
+// ✅ Little Language imports
+const validate = require('../utils/validationEngine');
+const rules = require('../utils/validationRules');
 
 /**
  * Handle user login
@@ -29,8 +33,8 @@ const loginUser = async (req, res) => {
     const username = rawUsername ? rawUsername.trim() : '';
     const password = rawPassword ? rawPassword : '';
 
-    // Validate login data
-    const validation = validateLogin({ username, password });
+    // ✅ Validate using Little Language
+    const validation = validate({ username, password }, rules.login);
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -79,7 +83,11 @@ const loginUser = async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 };
 
@@ -98,6 +106,7 @@ const signupUser = async (req, res) => {
   try {
     // Immutable copy of input
     const input = { ...req.body };
+
     const {
       fullName = '',
       username = '',
@@ -112,10 +121,18 @@ const signupUser = async (req, res) => {
       otherSkill = null
     } = input;
 
-    // Validate signup data
-    const validation = validateSignup({ fullName, username, email, password, phone, location, age });
+    // ✅ Validate using Little Language
+    const validation = validate(
+      { fullName, username, email, password, phone, location, age },
+      rules.signup
+    );
+
     if (!validation.valid) {
-      return res.status(400).json({ success: false, message: 'Validation failed', errors: validation.errors });
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validation.errors
+      });
     }
 
     // Check if user already exists (immutable input)
@@ -130,7 +147,10 @@ const signupUser = async (req, res) => {
       return res.status(409).json({
         success: false,
         message: 'User already exists',
-        errors: existingUser.email === email.toLowerCase() ? ['Email already exists'] : ['Username already taken']
+        errors:
+          existingUser.email === email.toLowerCase()
+            ? ['Email already exists']
+            : ['Username already taken']
       });
     }
 
@@ -157,16 +177,31 @@ const signupUser = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Account created successfully',
-      data: { username: newUser.username, email: newUser.email, fullName: newUser.fullName, timestamp: newUser.createdAt }
+      data: {
+        username: newUser.username,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        timestamp: newUser.createdAt
+      }
     });
 
   } catch (error) {
     console.error('Signup error:', error);
+
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
-      return res.status(409).json({ success: false, message: `${field} already exists`, errors: [`${field} already exists`] });
+      return res.status(409).json({
+        success: false,
+        message: `${field} already exists`,
+        errors: [`${field} already exists`]
+      });
     }
-    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 };
 
@@ -177,13 +212,32 @@ const signupUser = async (req, res) => {
 const getUserProfile = async (req, res) => {
   try {
     const { username } = req.params;
-    const user = await User.findOne({ username: username.toLowerCase() }, { password: 0 });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    res.status(200).json({ success: true, message: 'User profile retrieved successfully', data: user });
+    const user = await User.findOne(
+      { username: username.toLowerCase() },
+      { password: 0 }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User profile retrieved successfully',
+      data: user
+    });
+
   } catch (error) {
     console.error('Get user profile error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 };
 
@@ -207,16 +261,36 @@ const updateUserProfile = async (req, res) => {
       { new: true, runValidators: true, select: { password: 0 } }
     );
 
-    if (!updatedUser) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
 
-    res.status(200).json({ success: true, message: 'Profile updated successfully', data: updatedUser });
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser
+    });
+
   } catch (error) {
     console.error('Update user profile error:', error);
+
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ success: false, message: 'Validation failed', errors });
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors
+      });
     }
-    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 };
 
