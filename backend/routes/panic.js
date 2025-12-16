@@ -2,6 +2,10 @@
  * Panic Button Route
  * Handles emergency panic button functionality
  */
+/**
+ * Panic Button Route
+ * Handles emergency panic button functionality
+ */
 
 /**
  * =========================================================
@@ -143,12 +147,15 @@ const CommunityPost = require('../models/CommunityPost');
 
 /**
  * notifyVolunteers
- * Sends email alerts to all users in the database
+ * Sends beautiful email alerts to all VOLUNTEERS in the database
  * Uses a snapshot to prevent mutation inconsistencies
  */
 async function notifyVolunteers(emergencyPost) {
-  // Fetch all users from DB
-  const volunteers = await User.find({});
+  // ✅ Fetch ONLY users who are volunteers (isVolunteer: true)
+  const volunteers = await User.find({ isVolunteer: true });
+
+  // Log how many volunteers were found
+  console.log(`📋 Found ${volunteers.length} registered volunteer(s)`);
 
   // Snapshot to prevent issues if list mutates
   const volunteersSnapshot = [...volunteers];
@@ -157,37 +164,298 @@ async function notifyVolunteers(emergencyPost) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: '', // your Gmail
-      pass: ''     // Gmail App Password
+      user: '',
+      pass: ''
     }
   });
 
+  let successCount = 0;
+  let failCount = 0;
+
   for (const volunteer of volunteersSnapshot) {
-    if (!volunteer.email) continue; // Skip users without email
+    if (!volunteer.email) {
+      console.log(`⚠️ Skipping ${volunteer.fullName || volunteer.username} - no email found`);
+      continue;
+    }
+
     const mailOptions = {
-      from: 'your.email@gmail.com',
+      from: 'RapidResQ Emergency <sshabbir.bese23seecs@seecs.edu.pk>',
       to: volunteer.email,
-      subject: `🚨 SOS Alert: Life in Danger`,
-      text: `Hello ${volunteer.fullName || volunteer.username},
+      subject: '🚨 URGENT: Emergency SOS Alert - Immediate Response Required',
+      html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f4f4">
+    <tr>
+      <td align="center" style="padding:20px 0;">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff">
+          
+          <!-- Header -->
+          <tr>
+            <td bgcolor="#dc3545" align="center" style="padding:40px 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <div style="font-size:60px;line-height:60px;margin:0 0 10px 0;">🚨</div>
+                    <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:bold;line-height:1.2;">EMERGENCY SOS ALERT</h1>
+                    <div style="color:#ffffff;font-size:20px;font-weight:bold;margin:10px 0 0 0;letter-spacing:2px;">RapidResQ</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-A user is in immediate danger. Please check the RapidResQ community post:
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding:30px;">
+              
+              <!-- Greeting -->
+              <p style="font-size:18px;color:#333333;margin:0 0 20px 0;">
+                Hello <strong>${volunteer.fullName || volunteer.username}</strong>,
+              </p>
 
-Title: ${emergencyPost.title}
-Location: ${emergencyPost.location}
-Phone: ${emergencyPost.phone}
+              <!-- Urgent Message Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td bgcolor="#fff3cd" style="padding:20px;border-left:5px solid #ffc107;">
+                    <p style="margin:0;font-size:16px;color:#856404;font-weight:bold;">
+                      ⚠️ A person is in <span style="color:#dc3545;">IMMEDIATE DANGER</span> and requires urgent assistance!
+                    </p>
+                  </td>
+                </tr>
+              </table>
 
-Act immediately!
+              <br><br>
 
-- RapidResQ Team`
+              <!-- Emergency Details Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f9fa">
+                <tr>
+                  <td style="padding:25px;">
+                    
+                    <h2 style="color:#dc3545;font-size:20px;margin:0 0 20px 0;">📋 Emergency Details</h2>
+                    
+                    <!-- Person Box -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:15px;">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:15px;border-left:4px solid #dc3545;">
+                          <div style="font-size:24px;margin-bottom:5px;">👤</div>
+                          <div style="font-size:11px;color:#6c757d;font-weight:bold;margin-bottom:5px;">PERSON IN DISTRESS</div>
+                          <div style="font-size:16px;color:#212529;font-weight:bold;">${emergencyPost.author}</div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Location Box -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:15px;">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:15px;border-left:4px solid #dc3545;">
+                          <div style="font-size:24px;margin-bottom:5px;">📍</div>
+                          <div style="font-size:11px;color:#6c757d;font-weight:bold;margin-bottom:5px;">LOCATION</div>
+                          <div style="font-size:16px;color:#212529;font-weight:bold;">${emergencyPost.location}</div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Phone Box -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:15px;">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:15px;border-left:4px solid #dc3545;">
+                          <div style="font-size:24px;margin-bottom:5px;">📞</div>
+                          <div style="font-size:11px;color:#6c757d;font-weight:bold;margin-bottom:5px;">CONTACT NUMBER</div>
+                          <div style="font-size:18px;color:#dc3545;font-weight:bold;">${emergencyPost.phone}</div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Time Box -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:15px;border-left:4px solid #dc3545;">
+                          <div style="font-size:24px;margin-bottom:5px;">⏰</div>
+                          <div style="font-size:11px;color:#6c757d;font-weight:bold;margin-bottom:5px;">ALERT TIMESTAMP</div>
+                          <div style="font-size:14px;color:#212529;">${new Date().toLocaleString()}</div>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              <br><br>
+
+              <!-- Action Steps Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#d1ecf1">
+                <tr>
+                  <td style="padding:25px;border-left:5px solid #17a2b8;">
+                    
+                    <h2 style="color:#0c5460;font-size:18px;margin:0 0 15px 0;">✅ Immediate Actions Required</h2>
+                    
+                    <!-- Step 1 -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:12px 15px;">
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td bgcolor="#17a2b8" align="center" style="color:#ffffff;width:30px;height:30px;font-weight:bold;vertical-align:middle;border-radius:50%;">1</td>
+                              <td style="padding-left:12px;color:#495057;font-size:14px;">Call the person immediately at <strong>${emergencyPost.phone}</strong></td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Step 2 -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:12px 15px;">
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td bgcolor="#17a2b8" align="center" style="color:#ffffff;width:30px;height:30px;font-weight:bold;vertical-align:middle;border-radius:50%;">2</td>
+                              <td style="padding-left:12px;color:#495057;font-size:14px;">If nearby <strong>${emergencyPost.location}</strong>, respond in person</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Step 3 -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:12px 15px;">
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td bgcolor="#17a2b8" align="center" style="color:#ffffff;width:30px;height:30px;font-weight:bold;vertical-align:middle;border-radius:50%;">3</td>
+                              <td style="padding-left:12px;color:#495057;font-size:14px;">Contact emergency services if needed</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Step 4 -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td bgcolor="#ffffff" style="padding:12px 15px;">
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td bgcolor="#17a2b8" align="center" style="color:#ffffff;width:30px;height:30px;font-weight:bold;vertical-align:middle;border-radius:50%;">4</td>
+                              <td style="padding-left:12px;color:#495057;font-size:14px;">Check RapidResQ app for updates</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              <br><br>
+
+              <!-- Emergency Contacts -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:2px dashed #ffc107;">
+                <tr>
+                  <td align="center" style="padding:15px;">
+                    <div style="color:#dc3545;font-size:16px;font-weight:bold;margin-bottom:10px;">🆘 Pakistan Emergency Services</div>
+                    <div style="font-size:18px;color:#333333;">
+                      Police: <strong>15</strong> | Ambulance: <strong>1122</strong> | Fire: <strong>16</strong>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <br><br>
+
+              <!-- Critical Banner -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#dc3545">
+                <tr>
+                  <td align="center" style="padding:20px;color:#ffffff;font-size:18px;font-weight:bold;">
+                    ⏱️ TIME IS CRITICAL - EVERY SECOND COUNTS!
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#343a40" align="center" style="padding:25px;">
+              <p style="color:#adb5bd;font-size:13px;margin:0 0 10px 0;">
+                You're receiving this alert because you're a registered volunteer in the <strong style="color:#ffffff;">RapidResQ Emergency Response System</strong>.
+              </p>
+              <p style="color:#adb5bd;font-size:13px;margin:0 0 15px 0;">
+                Your quick response can save a life. Thank you for being a hero! 🦸
+              </p>
+              <p style="color:#ffffff;font-size:14px;margin:0;">
+                <strong>RapidResQ Team</strong><br>
+                Emergency Response Platform<br>
+                Available 24/7 for Communities
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `,
+      text: `
+🚨🚨🚨 EMERGENCY SOS ALERT 🚨🚨🚨
+
+Hello ${volunteer.fullName || volunteer.username},
+
+⚠️ A PERSON IS IN IMMEDIATE DANGER AND REQUIRES URGENT ASSISTANCE!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 EMERGENCY DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 Person in Distress: ${emergencyPost.author}
+📍 Location: ${emergencyPost.location}
+📞 Contact Number: ${emergencyPost.phone}
+⏰ Alert Time: ${new Date().toLocaleString()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ IMMEDIATE ACTIONS REQUIRED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Call the person immediately at ${emergencyPost.phone}
+2. If you're nearby ${emergencyPost.location}, consider responding in person
+3. Contact emergency services if needed:
+   • Police: 15
+   • Ambulance: 1122
+   • Fire: 16
+4. Check the RapidResQ app for real-time updates
+
+⏱️ TIME IS CRITICAL - EVERY SECOND COUNTS!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You're receiving this because you're a registered volunteer in RapidResQ.
+Your quick response can save a life!
+
+- RapidResQ Emergency Response Team
+  Available 24/7 for Communities
+      `
     };
 
     try {
       await transporter.sendMail(mailOptions);
       console.log(`📧 Email sent to ${volunteer.fullName || volunteer.username} at ${volunteer.email}`);
+      successCount++;
     } catch (err) {
       console.error(`❌ Failed to send email to ${volunteer.email}:`, err.message);
+      failCount++;
     }
   }
+
+  console.log(`✅ Email summary: ${successCount} sent, ${failCount} failed`);
 }
 
 /**
