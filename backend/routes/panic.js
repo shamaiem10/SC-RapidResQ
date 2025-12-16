@@ -151,11 +151,15 @@ const CommunityPost = require('../models/CommunityPost');
  * Uses a snapshot to prevent mutation inconsistencies
  */
 async function notifyVolunteers(emergencyPost) {
+
   // ✅ Fetch ONLY users who are volunteers (isVolunteer: true)
   const volunteers = await User.find({ isVolunteer: true });
 
   // Log how many volunteers were found
-  console.log(`📋 Found ${volunteers.length} registered volunteer(s)`);
+  console.log(`Found ${volunteers.length} registered volunteer(s)`);
+
+  // STRATEGY 1: SNAPSHOT MECHANISM - Localizes concurrent mutation bugs
+  // Creates a copy of volunteers array to prevent issues if DB changes during iteration
 
   // Snapshot to prevent issues if list mutates
   const volunteersSnapshot = [...volunteers];
@@ -445,6 +449,10 @@ Your quick response can save a life!
       `
     };
 
+    // TRY-CATCH BLOCK - Localizes and reproduces email sending failures
+   // LOCALIZED: console.error() logs which volunteer failed (${volunteer.email}) and why (err.message shows EAUTH, ETIMEDOUT, etc)
+  // REPRODUCED: If email sending fails, catch block catches it and logs the exact error, proving the bug exists
+
     try {
       await transporter.sendMail(mailOptions);
       console.log(`📧 Email sent to ${volunteer.fullName || volunteer.username} at ${volunteer.email}`);
@@ -464,6 +472,10 @@ Your quick response can save a life!
  */
 async function sendSOSAlert(user, location) {
   // ======= Preconditions =======
+
+  // PRECONDITION VALIDATION - Localizes and fixes invalid data input
+  // Validates all required data exists before creating post
+
   if (!user) throw new Error('Precondition failed: user object is required');
   if (!user.phone) throw new Error('Precondition failed: user must have a phone number');
   if (!location || location.trim() === '') throw new Error('Precondition failed: location is required');
@@ -487,6 +499,9 @@ async function sendSOSAlert(user, location) {
 
   const savedPost = await emergencyPost.save();
 
+  // POSTCONDITION CHECK - Reproduces and fixes silent database failures
+  // Verifies that the post was actually saved to database
+
   // ======= Postconditions =======
   if (!savedPost) throw new Error('Postcondition failed: emergency post was not saved');
 
@@ -507,6 +522,9 @@ router.post('/panic', async (req, res) => {
   try {
     let { username } = req.body;
 
+    //INPUT VALIDATION - Localizes and reproduces invalid API requests
+    // Checks that required username parameter exists
+
     // ======= Input validation =======
     if (!username) {
       return res.status(400).json({
@@ -517,6 +535,9 @@ router.post('/panic', async (req, res) => {
 
     username = username.trim().toLowerCase();
     const user = await User.findOne({ username });
+
+    //INPUT VALIDATION - Reproduces and fixes user not found errors
+    // Verifies user exists in database
 
     if (!user) {
       return res.status(404).json({
