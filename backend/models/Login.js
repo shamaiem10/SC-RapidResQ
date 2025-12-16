@@ -1,6 +1,5 @@
 /**
  * Abstract Data Type: LoginRecord
- * ===============================
  * 
  * ABSTRACTION FUNCTION:
  * AF(login) = A login record where:

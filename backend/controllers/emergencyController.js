@@ -6,7 +6,6 @@ const emergencyParser = new EmergencyCommandANTLRParser();
 
 /**
  * CONCURRENCY IMPLEMENTATION
- * =========================
  * Demonstrates: Two Models, Race Conditions, Testing & Debugging Challenges
  */
 
@@ -259,7 +258,6 @@ async function getNearby(req, res) {
 
 /**
  * ANTLR PARSING ENDPOINTS
- * ======================
  * Demonstrates: Parser Generators, Grammar Implementation, 
  * Parse Tree Construction, AST Building, Error Handling
  */
@@ -683,7 +681,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 /**
  * CONCURRENCY HELPER FUNCTIONS
- * ============================
  */
 
 // Simulate concurrent emergency processing with race conditions
@@ -733,18 +730,13 @@ async function safeParserAccess(command) {
     concurrencyStats.lockContentions++;
     await new Promise(resolve => setTimeout(resolve, 1));
   }
-  
   // Acquire lock
   parserLock = true;
   parserUsageCount++;
-  
   try {
-    // Critical section - parser usage
+    // Critical section 
     const result = emergencyParser.parse(command);
-    
-    // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, Math.random() * 5));
-    
     return result;
   } finally {
     // Release lock

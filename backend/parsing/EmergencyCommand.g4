@@ -151,7 +151,7 @@ ACCIDENT        : 'accident' | 'ACCIDENT' | 'crash' | 'CRASH' | 'collision' | 'C
 FLOOD           : 'flood' | 'FLOOD' | 'water' | 'WATER' | 'flooding' | 'FLOODING' ;
 EARTHQUAKE      : 'earthquake' | 'EARTHQUAKE' | 'quake' | 'QUAKE' | 'seismic' | 'SEISMIC' ;
 CRIME           : 'crime' | 'CRIME' | 'theft' | 'THEFT' | 'robbery' | 'ROBBERY' | 'security' | 'SECURITY' ;
-DISASTER        : 'disaster' | 'DISASTER' | 'emergency' | 'EMERGENCY' ;
+DISASTER        : 'disaster' | 'DISASTER' ;
 
 // Service types
 AMBULANCE       : 'ambulance' | 'AMBULANCE' | 'ems' | 'EMS' ;
