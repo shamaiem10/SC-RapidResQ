@@ -15,7 +15,6 @@
  * Grammar Coverage:
  * - Emergency alerts (fire, medical, accident, etc.)
  * - Service queries (ambulance, hospital, police)
- * - Status updates and tracking
  * - Pakistani locations and contact formats
  * - GPS coordinates and addresses
  */
@@ -31,7 +30,6 @@ grammar EmergencyCommand;
 emergencyCommand
     : alertCommand EOF
     | queryCommand EOF
-    | statusCommand EOF
     | helpCommand EOF
     ;
 
@@ -45,10 +43,6 @@ queryCommand
     : QUERY serviceType (AT | NEAR | IN) location
     ;
 
-// STATUS command: "STATUS request-12345"
-statusCommand
-    : STATUS requestId
-    ;
 
 // HELP command: "HELP" or "HELP fire emergencies"
 helpCommand
@@ -118,10 +112,6 @@ contactInfo
     | EMERGENCY_NUMBER  // Short emergency numbers (1122, 15, 16)
     ;
 
-// Request ID for status tracking
-requestId
-    : REQUEST_ID
-    ;
 
 // Help topics
 topic
@@ -136,7 +126,6 @@ topic
 // Command keywords
 ALERT           : 'ALERT' | 'alert' | 'EMERGENCY' | 'emergency' ;
 QUERY           : 'QUERY' | 'query' | 'FIND' | 'find' | 'SEARCH' | 'search' ;
-STATUS          : 'STATUS' | 'status' | 'CHECK' | 'check' ;
 HELP            : 'HELP' | 'help' | 'INFO' | 'info' ;
 
 // Location prepositions
@@ -185,8 +174,6 @@ EMAIL           : [a-zA-Z0-9._-]+ '@' [a-zA-Z0-9.-]+ '.' [a-zA-Z]+ ;
 // Emergency numbers (1122, 15, 16, 130, etc.)
 EMERGENCY_NUMBER : '1122' | '15' | '16' | '130' | '1915' | '911' ;
 
-// Request ID patterns: request-12345, EMG-2024-001, alert-karachi-456
-REQUEST_ID      : [a-zA-Z]+ '-' [a-zA-Z0-9]+ ('-' [a-zA-Z0-9]+)? ;
 
 // Street types for addresses
 STREET_TYPE     : 'Street' | 'STREET' | 'Road' | 'ROAD' | 'Lane' | 'LANE' 

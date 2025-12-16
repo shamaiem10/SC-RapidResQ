@@ -336,7 +336,6 @@ async function parseEmergencyCommand(req, res) {
       examples: [
         'ALERT medical at Karachi University',
         'QUERY hospital near Lahore',
-        'STATUS request-12345',
         'HELP fire emergencies'
       ]
     });
@@ -383,10 +382,6 @@ async function getParserInfo(req, res) {
           'QUERY ambulance at Gulberg Lahore', 
           'QUERY police near GPS:24.8607,67.0011'
         ],
-        status: [
-          'STATUS request-2024-001',
-          'STATUS EMG-12345'
-        ],
         help: [
           'HELP medical',
           'HELP fire emergencies',
@@ -410,7 +405,7 @@ async function testParsingExamples(req, res) {
     const examples = [
       'ALERT fire at Lahore Central Hospital HIGH priority contact 1122',
       'QUERY ambulance near Karachi University',
-      'STATUS request-12345', 
+      'HELP medical emergencies', 
       'HELP medical emergencies',
       'ALERT medical emergency at GPS:31.5497,74.3436 contact +92-321-1234567',
       'INVALID COMMAND with bad syntax'
@@ -480,12 +475,7 @@ function extractSemanticInfo(ast) {
       };
       break;
       
-    case 'STATUS':
-      semantics.extractedData = {
-        requestId: ast.attributes.requestId,
-        requiresLookup: true
-      };
-      break;
+    
       
     case 'HELP':
       semantics.extractedData = {
@@ -507,8 +497,6 @@ async function executeEmergencyCommand(ast) {
       return await processAlert(ast.attributes);
     case 'QUERY':
       return await processQuery(ast.attributes);
-    case 'STATUS':
-      return await processStatus(ast.attributes);
     case 'HELP':
       return await processHelp(ast.attributes);
     default:
@@ -582,24 +570,6 @@ async function processQuery(attributes) {
   }
 }
 
-// Helper: Process status command
-async function processStatus(attributes) {
-  const { requestId } = attributes;
-  
-  // Simulate status lookup
-  return {
-    action: 'STATUS_RETRIEVED',
-    requestId: requestId,
-    status: 'IN_PROGRESS',
-    details: {
-      created: new Date().toISOString(),
-      lastUpdate: new Date().toISOString(),
-      assignedUnit: 'UNIT-1122-A',
-      estimatedArrival: '8-12 minutes'
-    },
-    message: `Request ${requestId} is in progress. Emergency unit dispatched.`
-  };
-}
 
 // Helper: Process help command
 async function processHelp(attributes) {
@@ -651,7 +621,7 @@ function generateErrorSuggestions(diagnostics) {
   const suggestions = [];
   
   if (diagnostics.lexerErrors?.length > 0) {
-    suggestions.push('Check for typos in command keywords (ALERT, QUERY, STATUS, HELP)');
+    suggestions.push('Check for typos in command keywords (ALERT, QUERY, HELP)');
   }
   
   if (diagnostics.parseErrors?.length > 0) {
@@ -776,7 +746,7 @@ async function testConcurrencyDemo(req, res) {
   const testCommands = [
     'ALERT fire at Lahore Hospital',
     'QUERY ambulance near Karachi',
-    'STATUS request-12345',
+    'HELP medical emergency',
     'HELP medical emergency'
   ];
   
