@@ -1,4 +1,4 @@
-# RapidResq
+# RapidResq - Emergency Response Web Platform
 
 Steps to run the RapidResq MERN project locally:
 
